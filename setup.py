@@ -32,8 +32,9 @@ setup(
         "tests": [
             "pytest",
             "pytest-cov",
-            "trio",
+            "trio>=0.5.0",
             "curio",
+            "codecov",
         ]
     },
     test_requires=[],
