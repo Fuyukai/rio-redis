@@ -1,0 +1,147 @@
+# circleci pls make these inheritable
+
+version: 2
+jobs:
+  "3.6-curio":
+    docker:
+      - image: python:3.6
+        environment:
+          MULTIO_LIB: curio
+
+      - image: redis:5.0-rc4
+
+    # these are all basically the same
+    steps:
+      - run:
+          name: Install Git
+          command: apt update && apt install -y git
+
+      - checkout
+
+      - run:
+          name: Install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+
+      - run:
+          name: Wait for Redis to be ready
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -e .[tests]
+
+      - run:
+          name: Run tests
+          command: |
+            bash .circleci/runtests.sh
+
+  "3.7-curio":
+    docker:
+      - image: python:3.7
+        environment:
+          MULTIO_LIB: curio
+
+      - image: redis:5.0-rc4
+
+    # these are all basically the same
+    steps:
+      - run:
+          name: Install Git
+          command: apt update && apt install -y git
+
+      - checkout
+
+      - run:
+          name: Install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+
+      - run:
+          name: Wait for Redis to be ready
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -e .[tests]
+
+      - run:
+          name: Run tests
+          command: |
+            bash .circleci/runtests.sh
+
+  "3.6-trio":
+    docker:
+      - image: python:3.6
+        environment:
+          MULTIO_LIB: trio
+
+      - image: redis:5.0-rc4
+
+    # these are all basically the same
+    steps:
+      - run:
+          name: Install Git
+          command: apt update && apt install -y git
+
+      - checkout
+
+      - run:
+          name: Install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+
+      - run:
+          name: Wait for Redis to be ready
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -e .[tests]
+
+      - run:
+          name: Run tests
+          command: |
+            bash .circleci/runtests.sh
+
+  "3.7-trio":
+    docker:
+      - image: python:3.7
+        environment:
+          MULTIO_LIB: trio
+
+      - image: redis:5.0-rc4
+
+    # these are all basically the same
+    steps:
+      - run:
+          name: Install Git
+          command: apt update && apt install -y git
+
+      - checkout
+
+      - run:
+          name: Install dockerize
+          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
+          environment:
+            DOCKERIZE_VERSION: v0.3.0
+
+      - run:
+          name: Wait for Redis to be ready
+          command: dockerize -wait tcp://localhost:6379 -timeout 1m
+
+      - run:
+          name: Install requirements
+          command: |
+            pip install -e .[tests]
+
+      - run:
+          name: Run tests
+          command: |
+            bash .circleci/runtests.sh

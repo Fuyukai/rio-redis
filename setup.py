@@ -28,12 +28,10 @@ setup(
         "hiredis"
     ],
     extras_require={
-        "docs": [
-            "sphinx>=1.5.0",
-            "sphinxcontrib-asyncio",
-            "sphinx-autodoc-typehints>=1.2.1",
-            "guzzle_sphinx_theme",
-        ],
+        "tests": [
+            "pytest",
+            "pytest-cov"
+        ]
     },
     test_requires=[],
     python_requires=">=3.6.0",
