@@ -146,7 +146,7 @@ jobs:
           command: |
             bash .circleci/runtests.sh
 
-workflow:
+workflows:
   version: 2
   build_and_test:
     jobs:
