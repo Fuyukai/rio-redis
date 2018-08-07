@@ -1,7 +1,7 @@
 rio-redis
 =========
 
-A redis implementation for `multio<https://github.com/theelous3/multio`_.
+A redis implementation for `multio <https://github.com/theelous3/multio>`_.
 
 Development Setup
 -----------------
