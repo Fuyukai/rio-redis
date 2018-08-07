@@ -145,3 +145,12 @@ jobs:
           name: Run tests
           command: |
             bash .circleci/runtests.sh
+
+workflow:
+  version: 2
+  build_and_test:
+    jobs:
+      - "3.6-curio"
+      - "3.6-trio"
+      - "3.7-curio"
+      - "3.7-trio"
