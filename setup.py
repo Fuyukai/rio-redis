@@ -25,12 +25,15 @@ setup(
         "setuptools_scm",
     ],
     install_requires=[
-        "hiredis"
+        "hiredis",
+        "multio",
     ],
     extras_require={
         "tests": [
             "pytest",
-            "pytest-cov"
+            "pytest-cov",
+            "trio",
+            "curio",
         ]
     },
     test_requires=[],
