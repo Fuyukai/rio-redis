@@ -17,4 +17,8 @@ async def create_redis(host: str, port: int, **kwargs) -> Redis:
     """
     sock = await multio.asynclib.open_connection(host, port)
     conn = multio.SocketWrapper(sock)
-    return Redis(conn, **kwargs)
+    r = Redis(conn, **kwargs)
+    if 'client_name' in kwargs:
+        await r._execute_command("CLIENT", "SETNAME", kwargs['client_name'])
+
+    return r
