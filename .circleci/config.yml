@@ -7,6 +7,7 @@ jobs:
       - image: python:3.6
         environment:
           MULTIO_LIB: curio
+          REDIS_URL: 127.0.0.1:6379
 
       - image: redis:5.0-rc4
 
@@ -43,6 +44,7 @@ jobs:
       - image: python:3.7
         environment:
           MULTIO_LIB: curio
+          REDIS_URL: 127.0.0.1:6379
 
       - image: redis:5.0-rc4
 
@@ -79,6 +81,7 @@ jobs:
       - image: python:3.6
         environment:
           MULTIO_LIB: trio
+          REDIS_URL: 127.0.0.1:6379
 
       - image: redis:5.0-rc4
 
@@ -115,6 +118,7 @@ jobs:
       - image: python:3.7
         environment:
           MULTIO_LIB: trio
+          REDIS_URL: 127.0.0.1:6379
 
       - image: redis:5.0-rc4
 

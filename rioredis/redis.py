@@ -13,6 +13,23 @@ from rioredis.exceptions import RedisError
 T = TypeVar("T")
 
 
+async def create_redis(host: str, port: int, **kwargs) -> 'Redis':
+    """
+    Connects to a redis server.
+
+    :param host: The hostname to connect to.
+    :param port: The port to connect to.
+    :return: A :class:`.Redis` instance connected to the specified host/port.
+    """
+    sock = await multio.asynclib.open_connection(host, port)
+    conn = multio.SocketWrapper(sock)
+    r = Redis(conn, **kwargs)
+    if 'client_name' in kwargs:
+        await r._execute_command("CLIENT", "SETNAME", kwargs['client_name'])
+
+    return r
+
+
 def basic_command(fn: Callable[..., T]) -> Callable[..., T]:
     """
     Marks a command as a basic command, passing it directly through to redis.
@@ -67,8 +84,16 @@ class Redis(object):
         self._parser = hiredis.Reader()
 
         self._pipeline = None
+        self._closed = False
 
-    # misc methods
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.close()
+        return False
+
+    # internal methods
     def pipeline(self) -> 'md_pipeline.Pipeline':
         """
         :return: A pipeline object that can be async with'd to create a pipeline.
@@ -113,6 +138,17 @@ class Redis(object):
     def _reraise_hiredis_error(err, command):
         raise RedisError(err, command)
 
+    async def _reset(self):
+        self._pipeline = None
+        await self.select(0)
+
+    async def close(self):
+        """
+        Closes this Redis connection.
+        """
+        self._closed = True
+        await self._sock.close()
+
     async def _execute_command(self, *command: AnyStr):
         """
         Executes a command.
@@ -124,6 +160,9 @@ class Redis(object):
         :param command: The command to execute.
         :return: The return value of the command, or None if this was on a pipeline.
         """
+        if self._closed:
+            raise RuntimeError("This redis is closed")
+
         if self._pipeline:
             return self._pipeline.enque(command)
 
@@ -288,6 +327,13 @@ class Redis(object):
         :return: The bytes of the key if it existed, or None otherwise.
         """
 
+    @autodoc("exists")
+    async def exists(self, key: str) -> bool:
+        """
+        Checks to see if a key exists.
+        """
+        return bool(await self._execute_command("EXISTS", key))
+
     @basic_command
     async def expire(self, key: str, ttl: int) -> int:
         """
@@ -387,7 +433,7 @@ class Redis(object):
         if value not in [0, 1]:
             raise ValueError("Bit must be 0 or 1")
 
-        return await self._execute_command("SETBIT", key, str(bit))
+        return await self._execute_command("SETBIT", key, str(bit), str(value))
 
     @autodoc("bitpos")
     async def bitpos(self, key: str, bit: int, *, start: int = None, end: int = None) -> int:
@@ -425,7 +471,7 @@ class Redis(object):
         :param amount: The amount to increment by.
         """
 
-    @basic_command
+    @autodoc("incrbyfloat")
     async def incrbyfloat(self, key: str, amount: float) -> float:
         """
         Increments the specified key by a floating-point amount.
@@ -434,6 +480,7 @@ class Redis(object):
         :param amount: The :class:`float` to increment.
         :return: The new value of the key.
         """
+        return float(await self._execute_command("INCRBYFLOAT", key, str(amount)))
 
     @basic_command
     async def decr(self, key: str) -> int:
@@ -591,11 +638,11 @@ class Redis(object):
         :return: Either a list of (key, value) tuples, or a dict.
         """
         result = await self._execute_command("HGETALL", key)
+        chunks = [result[i:i + 2] for i in range(0, len(result), 2)]
         if return_dict:
-            chunks = [result[i:i + 2] for i in range(0, len(result), 2)]
             return {i[0]: i[1] for i in chunks}
-
-        return result
+        else:
+            return [tuple(x) for x in chunks]
 
     @basic_command
     async def hincrby(self, key: str, field: str, increment: int) -> int:
