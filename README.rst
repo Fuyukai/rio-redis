@@ -1,12 +1,15 @@
 rio-redis
 =========
 
-.. image:: https://img.shields.io/circleci/project/github/Fuyukai/rio-redis.svg?style=for-the-badge
+|ci| |cov|
+
+.. |ci| image:: https://img.shields.io/circleci/project/github/Fuyukai/rio-redis.svg?style=for-the-badge
     :alt: CircleCI
     :target: https://circleci.com/gh/Fuyukai/rio-redis/tree/master
 
-.. image:: https://img.shields.io/codecov/c/github/Fuyukai/rio-redis.svg?style=for-the-badge
+.. |cov| image:: https://img.shields.io/codecov/c/github/Fuyukai/rio-redis.svg?style=for-the-badge
     :alt: Codecov
+    :target: https://codecov.io/gh/Fuyukai/rio-redis
 
 A redis implementation for `multio <https://github.com/theelous3/multio>`_.
 
