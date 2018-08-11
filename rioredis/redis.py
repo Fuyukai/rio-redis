@@ -4,13 +4,16 @@ from io import BytesIO
 import functools
 import multio as multio
 from hiredis import hiredis
-from typing import Union, List, Sized, Sequence
+from typing import Union, List, Sized, Sequence, Any, Dict, Tuple, Callable, TypeVar, Mapping, \
+    AnyStr
 
 from rioredis import pipeline as md_pipeline
 from rioredis.exceptions import RedisError
 
+T = TypeVar("T")
 
-def basic_command(fn):
+
+def basic_command(fn: Callable[..., T]) -> Callable[..., T]:
     """
     Marks a command as a basic command, passing it directly through to redis.
     """
@@ -25,14 +28,13 @@ def basic_command(fn):
 
             return str(i)
 
-
         command = [name, *map(_mapper, args)]
         return await self._execute_command(*command)
 
     return _worker
 
 
-def autodoc(name=None):
+def autodoc(name=None) -> Callable[..., T]:
     def _cbl(fn):
         doc = inspect.getdoc(fn)
         if doc is None:
@@ -74,7 +76,7 @@ class Redis(object):
         return md_pipeline.Pipeline(self)
 
     @staticmethod
-    def _conform_command(command: Sequence[Union[str, bytes]]) -> bytes:
+    def _conform_command(command: Sequence[AnyStr]) -> bytes:
         """
         Makes a command conform to a redis command format.
 
@@ -111,7 +113,7 @@ class Redis(object):
     def _reraise_hiredis_error(err, command):
         raise RedisError(err, command)
 
-    async def _execute_command(self, *command: Union[str, bytes]):
+    async def _execute_command(self, *command: AnyStr):
         """
         Executes a command.
 
@@ -127,7 +129,7 @@ class Redis(object):
 
         return await self._do_network_one(command)
 
-    async def _do_network_one(self, command: Sequence[Union[str, bytes]]):
+    async def _do_network_one(self, command: Sequence[AnyStr]):
         """
         Performs network activity for one command.
 
@@ -152,7 +154,7 @@ class Redis(object):
                 else:
                     return result
 
-    async def _do_network_many(self, commands: Sequence[Sequence[Union[str, bytes]]]):
+    async def _do_network_many(self, commands: Sequence[Sequence[AnyStr]]):
         """
         Performs network activity for many commands.
 
@@ -299,6 +301,12 @@ class Redis(object):
     async def pexpire(self, key: str, ttl: int) -> int:
         """
         Sets a millisecond expiration on a key.
+        """
+
+    @basic_command
+    async def persist(self, key: str):
+        """
+        Removes the expiration from a key.
         """
 
     @autodoc("del")
@@ -462,7 +470,7 @@ class Redis(object):
         """
 
     @autodoc()
-    async def linsert(self, key: str, pivot: str, value: Union[str, bytes], *,
+    async def linsert(self, key: str, pivot: str, value: AnyStr, *,
                       before: bool = False, after: bool = False) -> int:
         """
         Inserts ``value`` in the list stored at ``key`` either before or after the reference
@@ -481,13 +489,13 @@ class Redis(object):
         """
 
     @basic_command
-    async def lpop(self, key: str) -> bytes:
+    async def lpop(self, key: str) -> Any:
         """
         Does a left pop of a list.
         """
 
     @basic_command
-    async def lpush(self, key: str, *values: Union[str, bytes]) -> int:
+    async def lpush(self, key: str, *values: AnyStr) -> int:
         """
         Does a left push onto a list.
         """
@@ -499,13 +507,13 @@ class Redis(object):
         """
 
     @basic_command
-    async def lrange(self, key: str, start: int, stop: int) -> List[bytes]:
+    async def lrange(self, key: str, start: int, stop: int) -> List[Any]:
         """
         Gets a slice of a list.
         """
 
     @basic_command
-    async def lrem(self, key: str, count: int, value: Union[str, bytes]) -> int:
+    async def lrem(self, key: str, count: int, value: AnyStr) -> int:
         """
         Removes the first count occurrences of elements equal to value from the list stored at
         key.
@@ -517,7 +525,7 @@ class Redis(object):
         """
 
     @basic_command
-    async def lset(self, key: str, index: int, value: Union[str, bytes]) -> bytes:
+    async def lset(self, key: str, index: int, value: AnyStr) -> bytes:
         """
         Sets an item of a list at the index specified.
         """
@@ -529,7 +537,7 @@ class Redis(object):
         """
 
     @basic_command
-    async def rpop(self, key: str) -> bytes:
+    async def rpop(self, key: str) -> Any:
         """
         Does a right pop from a list.
         """
@@ -550,4 +558,106 @@ class Redis(object):
     async def rpushx(self, key: str, value: Union[bytes, str]) -> int:
         """
         Does a right push onto a list, but only if it exists.
+        """
+
+    # hash commands
+    @basic_command
+    async def hdel(self, key: str, *fields: str) -> int:
+        """
+        Deletes the specified fields from a hash.
+        """
+
+    @autodoc("hexists")
+    async def hexists(self, key: str, field: str) -> bool:
+        """
+        Checks if a field exists in a hash.
+        """
+        return bool(await self._execute_command("HEXISTS", key, field))
+
+    @basic_command
+    async def hget(self, key: str, field: str) -> Any:
+        """
+        Gets the value at the specified field in a hash.
+        """
+
+    @autodoc("hgetall")
+    async def hgetall(self, key: str, *, return_dict: bool = True) \
+            -> Union[List[Tuple[bytes, Any]], Dict[bytes, Any]]:
+        """
+        Gets all the keys and values of a hash.
+
+        :param key: The hash to get.
+        :param return_dict: If the result should be a dict.
+        :return: Either a list of (key, value) tuples, or a dict.
+        """
+        result = await self._execute_command("HGETALL", key)
+        if return_dict:
+            chunks = [result[i:i + 2] for i in range(0, len(result), 2)]
+            return {i[0]: i[1] for i in chunks}
+
+        return result
+
+    @basic_command
+    async def hincrby(self, key: str, field: str, increment: int) -> int:
+        """
+        Increments a field in a hash by an increment.
+        """
+
+    @autodoc("hincrbyfloat")
+    async def hincrbyfloat(self, key: str, field: str, increment: float) -> float:
+        """
+        Increments a field in a hash by a float increment.
+        """
+        return float(await self._execute_command("HINCRBYFLOAT", key, field, str(increment)))
+
+    @basic_command
+    async def hkeys(self, key: str) -> List[bytes]:
+        """
+        Gets the keys of a hash.
+        """
+
+    @basic_command
+    async def hlen(self, key: str) -> int:
+        """
+        Gets the length of a hash.
+        """
+
+    @basic_command
+    async def hmget(self, key: str, *fields: str) -> List[bytes]:
+        """
+        Gets the values of a hash with the specified fields, returning None if the fields don't
+        exist.
+        """
+
+    @autodoc("hmset")
+    async def hmset(self, key: str, **pairs: AnyStr) -> bytes:
+        """
+        Sets multiple fields in a hash.
+        """
+        items = list(pairs.items())
+        flattened = [i for sub in items for i in sub]
+        return await self._execute_command("HMSET", key, *flattened)
+
+    @basic_command
+    async def hset(self, key: str, field: AnyStr, value: AnyStr) -> int:
+        """
+        Sets a field in a hash.
+        """
+
+    @basic_command
+    async def hsetnx(self, key: str, field: AnyStr, value: AnyStr) -> int:
+        """
+        Sets a field in a hash only if the field did not exist already.
+        """
+
+    @basic_command
+    async def hstrlen(self, key: str, field: AnyStr):
+        """
+        Gets the length of a field in a hash.
+        """
+
+    @basic_command
+    async def hvals(self, key: str) -> List[bytes]:
+        """
+        Gets the values of a hash.
         """
