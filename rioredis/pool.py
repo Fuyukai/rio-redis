@@ -2,8 +2,6 @@ import anyio
 import collections
 from typing import Callable, Optional
 
-import multio
-
 from rioredis import Redis, create_redis
 
 
