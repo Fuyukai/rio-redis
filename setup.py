@@ -26,7 +26,7 @@ setup(
     ],
     install_requires=[
         "hiredis",
-        "multio",
+        "anyio",
     ],
     extras_require={
         "tests": [

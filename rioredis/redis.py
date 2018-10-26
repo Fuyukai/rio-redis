@@ -1,13 +1,10 @@
 import anyio
-import inspect
-from io import BytesIO
-
-import ssl
+import ssl as _ssl
 import functools
-import multio as multio
+import inspect
 from hiredis import hiredis
-from typing import Union, List, Sized, Sequence, Any, Dict, Tuple, Callable, TypeVar, Mapping, \
-    AnyStr
+from io import BytesIO
+from typing import Any, AnyStr, Callable, Dict, List, Sequence, Tuple, TypeVar, Union
 
 from rioredis import pipeline as md_pipeline
 from rioredis.exceptions import RedisError
@@ -15,18 +12,23 @@ from rioredis.exceptions import RedisError
 T = TypeVar("T")
 
 
-async def create_redis(host: str, port: int, ssl: Union[bool, ssl.SSLContext] = False,
+async def create_redis(host: str, port: int, ssl: Union[bool, _ssl.SSLContext] = False,
                        **kwargs) -> 'Redis':
     """
     Connects to a redis server.
 
     :param host: The hostname to connect to.
     :param port: The port to connect to.
-    :param ssl:
+    :param ssl: If this connection is over SSL.
     :return: A :class:`.Redis` instance connected to the specified host/port.
     """
-    sock = await anyio.connect_tcp(host, port)
-    r = Redis(sock)
+    if ssl:
+        ctx = ssl if isinstance(ssl, _ssl.SSLContext) else None
+        sock = await anyio.connect_tcp(host, port, ssl_context=ctx, autostart_tls=True)
+    else:
+        sock = await anyio.connect_tcp(host, port)
+
+    r = Redis(sock, **kwargs)
     if 'client_name' in kwargs:
         await r._execute_command("CLIENT", "SETNAME", kwargs['client_name'])
 
