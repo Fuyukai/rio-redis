@@ -11,6 +11,7 @@ async def make_pool():
     return r
 
 
+@pytest.mark.anyio
 async def test_pool():
     pool = await make_pool()
     async with pool:

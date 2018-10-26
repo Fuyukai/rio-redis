@@ -11,7 +11,7 @@ rio-redis
     :alt: Codecov
     :target: https://codecov.io/gh/Fuyukai/rio-redis
 
-A redis implementation for `multio <https://github.com/theelous3/multio>`_.
+A redis implementation for `anyio <https://github.com/agronholm/anyio>`_.
 
 Development Setup
 -----------------

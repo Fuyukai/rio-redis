@@ -2,14 +2,13 @@
 
 version: 2
 jobs:
-  "3.6-curio":
+  "3.6":
     docker:
       - image: python:3.6
         environment:
-          MULTIO_LIB: curio
           REDIS_URL: 127.0.0.1:6379
 
-      - image: redis:5.0-rc4
+      - image: redis:5.0
 
     # these are all basically the same
     steps:
@@ -23,7 +22,7 @@ jobs:
           name: Install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
-            DOCKERIZE_VERSION: v0.3.0
+            DOCKERIZE_VERSION: v0.6.1
 
       - run:
           name: Wait for Redis to be ready
@@ -39,14 +38,13 @@ jobs:
           command: |
             bash .circleci/runtests.sh
 
-  "3.7-curio":
+  "3.7":
     docker:
       - image: python:3.7
         environment:
-          MULTIO_LIB: curio
           REDIS_URL: 127.0.0.1:6379
 
-      - image: redis:5.0-rc4
+      - image: redis:5.0
 
     # these are all basically the same
     steps:
@@ -60,81 +58,7 @@ jobs:
           name: Install dockerize
           command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
           environment:
-            DOCKERIZE_VERSION: v0.3.0
-
-      - run:
-          name: Wait for Redis to be ready
-          command: dockerize -wait tcp://localhost:6379 -timeout 1m
-
-      - run:
-          name: Install requirements
-          command: |
-            pip install -e .[tests]
-
-      - run:
-          name: Run tests
-          command: |
-            bash .circleci/runtests.sh
-
-  "3.6-trio":
-    docker:
-      - image: python:3.6
-        environment:
-          MULTIO_LIB: trio
-          REDIS_URL: 127.0.0.1:6379
-
-      - image: redis:5.0-rc4
-
-    # these are all basically the same
-    steps:
-      - run:
-          name: Install Git
-          command: apt update && apt install -y git
-
-      - checkout
-
-      - run:
-          name: Install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
-
-      - run:
-          name: Wait for Redis to be ready
-          command: dockerize -wait tcp://localhost:6379 -timeout 1m
-
-      - run:
-          name: Install requirements
-          command: |
-            pip install -e .[tests]
-
-      - run:
-          name: Run tests
-          command: |
-            bash .circleci/runtests.sh
-
-  "3.7-trio":
-    docker:
-      - image: python:3.7
-        environment:
-          MULTIO_LIB: trio
-          REDIS_URL: 127.0.0.1:6379
-
-      - image: redis:5.0-rc4
-
-    # these are all basically the same
-    steps:
-      - run:
-          name: Install Git
-          command: apt update && apt install -y git
-
-      - checkout
-
-      - run:
-          name: Install dockerize
-          command: wget https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && tar -C /usr/local/bin -xzvf dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz && rm dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz
-          environment:
-            DOCKERIZE_VERSION: v0.3.0
+            DOCKERIZE_VERSION: v0.6.1
 
       - run:
           name: Wait for Redis to be ready

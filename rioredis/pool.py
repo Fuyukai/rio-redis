@@ -1,5 +1,6 @@
+import anyio
 import collections
-from typing import Callable
+from typing import Callable, Optional
 
 import multio
 
@@ -7,7 +8,7 @@ from rioredis import Redis, create_redis
 
 
 async def create_pool(host: str, port: int, pool_size: int = 12, *,
-                      connection_factory: 'Callable[[], Redis]' = None) \
+                      connection_factory: 'Optional[Callable[[], Redis]]' = None) \
         -> 'Pool':
     """
     Creates a new :class:`.Pool`.
@@ -58,7 +59,7 @@ class Pool(object):
         self._pool_size = pool_size
         self._connection_factory = connection_factory or create_redis
 
-        self._sema = multio.Semaphore(pool_size)
+        self._sema = anyio.create_semaphore(pool_size)
         self._connections = collections.deque()
         self._closed = False
 
@@ -85,7 +86,7 @@ class Pool(object):
         :return: A :class:`.Connection` from the pool.
         """
         # wait for a new connection to be added
-        await self._sema.acquire()
+        await self._sema.__aenter__()  # this is fundamentally the same as acquire
         try:
             conn = self._connections.popleft()
         except IndexError:
@@ -112,7 +113,7 @@ class Pool(object):
         if conn is None:
             raise ValueError("Connection cannot be none")
 
-        await multio._maybe_await(self._sema.release())
+        await self._sema.__aexit__(None, None, None)
 
         if conn._closed:
             return

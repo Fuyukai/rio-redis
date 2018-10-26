@@ -1,4 +1,5 @@
 import os
+import pytest
 
 from rioredis import create_redis
 
@@ -12,6 +13,7 @@ async def get_redis():
     return r
 
 
+@pytest.mark.anyio
 async def test_basic_command():
     """
     Tests a basic command (something with the @basic_command decorator)
@@ -25,6 +27,7 @@ async def test_basic_command():
 
 
 # tests for every complex command go down here
+@pytest.mark.anyio
 async def test_set():
     redis = await get_redis()
     async with redis:
@@ -43,6 +46,7 @@ async def test_set():
         assert (await redis.get("test_set4")) is None
 
 
+@pytest.mark.anyio
 async def test_exists():
     redis = await get_redis()
     async with redis:
@@ -50,6 +54,7 @@ async def test_exists():
         assert (await redis.exists("test_exists1")) is True
 
 
+@pytest.mark.anyio
 async def test_setbit_bitcount():
     redis = await get_redis()
     async with redis:
@@ -58,6 +63,7 @@ async def test_setbit_bitcount():
         assert (await redis.bitcount("test_bitcount")) == 2
 
 
+@pytest.mark.anyio
 async def test_bitpos():
     redis = await get_redis()
     async with redis:
@@ -65,6 +71,7 @@ async def test_bitpos():
         assert (await redis.bitpos("test_bitcount", 1)) == 3
 
 
+@pytest.mark.anyio
 async def test_linsert():
     redis = await get_redis()
     async with redis:
@@ -73,6 +80,7 @@ async def test_linsert():
         assert (await redis.lrange("test_linsert", 0, 2)) == [b"abc", b"def"]
 
 
+@pytest.mark.anyio
 async def test_hexists():
     redis = await get_redis()
     async with redis:
@@ -80,6 +88,7 @@ async def test_hexists():
         assert (await redis.hexists("test_hexists", "f1")) is True
 
 
+@pytest.mark.anyio
 async def test_hgetall():
     redis = await get_redis()
     async with redis:
@@ -90,6 +99,7 @@ async def test_hgetall():
         assert r2 == {b"f1": b"f2"}
 
 
+@pytest.mark.anyio
 async def test_hincrbyfloat():
     redis = await get_redis()
     async with redis:
@@ -97,6 +107,7 @@ async def test_hincrbyfloat():
         assert (await redis.hincrbyfloat("test_hincrbyfloat", "aaa", 0.5)) == 1.5
 
 
+@pytest.mark.anyio
 async def test_hmset():
     redis = await get_redis()
     async with redis:
@@ -104,6 +115,7 @@ async def test_hmset():
         assert (await redis.hgetall("test_hmset")) == {b"f1": b"test", b"f2": b"test2"}
 
 
+@pytest.mark.anyio
 async def test_incrbyfloat():
     redis = await get_redis()
     async with redis:

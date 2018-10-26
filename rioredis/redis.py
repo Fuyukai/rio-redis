@@ -1,6 +1,8 @@
+import anyio
 import inspect
 from io import BytesIO
 
+import ssl
 import functools
 import multio as multio
 from hiredis import hiredis
@@ -13,17 +15,18 @@ from rioredis.exceptions import RedisError
 T = TypeVar("T")
 
 
-async def create_redis(host: str, port: int, **kwargs) -> 'Redis':
+async def create_redis(host: str, port: int, ssl: Union[bool, ssl.SSLContext] = False,
+                       **kwargs) -> 'Redis':
     """
     Connects to a redis server.
 
     :param host: The hostname to connect to.
     :param port: The port to connect to.
+    :param ssl:
     :return: A :class:`.Redis` instance connected to the specified host/port.
     """
-    sock = await multio.asynclib.open_connection(host, port)
-    conn = multio.SocketWrapper(sock)
-    r = Redis(conn, **kwargs)
+    sock = await anyio.connect_tcp(host, port)
+    r = Redis(sock)
     if 'client_name' in kwargs:
         await r._execute_command("CLIENT", "SETNAME", kwargs['client_name'])
 
@@ -51,8 +54,8 @@ def basic_command(fn: Callable[..., T]) -> Callable[..., T]:
     return _worker
 
 
-def autodoc(name=None) -> Callable[..., T]:
-    def _cbl(fn):
+def autodoc(name=None) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    def _cbl(fn: Callable[..., T]) -> Callable[..., T]:
         doc = inspect.getdoc(fn)
         if doc is None:
             return fn
@@ -75,12 +78,12 @@ class Redis(object):
     Represents a connection to a Redis server.
     """
 
-    def __init__(self, sock: multio.SocketWrapper):
+    def __init__(self, sock: anyio.SocketStream):
         """
-        :param sock: The :class:`multio.SocketWrapper` used to connect this redis database.
+        :param sock: The :class:`anyio.SocketStream` used to connect this redis database.
         """
         self._sock = sock
-        self._parser_lock = multio.Lock()
+        self._parser_lock = anyio.create_lock()
         self._parser = hiredis.Reader()
 
         self._pipeline = None
@@ -178,10 +181,10 @@ class Redis(object):
         converted_command = self._conform_command(command)
 
         async with self._parser_lock:
-            await self._sock.sendall(converted_command)
+            await self._sock.send_all(converted_command)
 
             while True:
-                data = await self._sock.recv(1024)
+                data = await self._sock.receive_some(1024)
                 self._parser.feed(data)
 
                 result = self._parser.gets()
